@@ -6,6 +6,7 @@ __pycache__/
 .env.*
 !.env.example
 media/
+private_media/
 staticfiles/
 *.sqlite3
 .coverage

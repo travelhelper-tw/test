@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 
-from .models import Course, Lecture, Progress
+from .models import Course, Lecture, Progress, Purchase
 from .views import lecture_detail
 
 
@@ -16,6 +16,7 @@ class LectureTests(TestCase):
         cls.user = get_user_model().objects.create_user(username="reader")
         cls.other_user = get_user_model().objects.create_user(username="other")
         cls.course = Course.objects.create(title="測試課程")
+        Purchase.objects.create(user=cls.user, course=cls.course)
         cls.first = Lecture.objects.create(
             course=cls.course, chapter_label="第一章", title="起點", order=10
         )
@@ -71,14 +72,14 @@ class LectureTests(TestCase):
     def test_no_n_plus_one_queries(self):
         request = RequestFactory().get(self.url())
         request.user = self.user
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             response = lecture_detail(request, self.course.pk, self.first.pk)
         self.assertEqual(response.status_code, 200)
         Lecture.objects.bulk_create([
             Lecture(course=self.course, chapter_label=f"章節 {i}", title="佔位", order=i)
             for i in range(40, 70)
         ])
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             response = lecture_detail(request, self.course.pk, self.first.pk)
         self.assertEqual(response.status_code, 200)
 
@@ -140,14 +141,15 @@ class LectureTests(TestCase):
         self.first.save()
         response = self.client.get(self.url())
         self.assertContains(response, "<audio")
-        self.assertContains(response, "/media/audio/demo.mp3")
+        self.assertContains(response, "/audio/audio/demo.mp3/")
+        self.assertNotContains(response, "/media/audio/")
         self.assertContains(response, "/media/covers/demo.png")
         self.assertContains(response, "<strong>原創簡介</strong>")
 
-    def test_home_redirects_to_first_lecture(self):
-        self.assertRedirects(
-            self.client.get(reverse("courses:home")), self.url(), fetch_redirect_response=False
-        )
+    def test_home_shows_sales_without_free_lecture_links(self):
+        response = self.client.get(reverse("courses:home"))
+        self.assertContains(response, reverse("courses:sales", args=[self.course.pk]))
+        self.assertNotContains(response, self.url())
 
     def test_html_editing_restricted_to_superuser(self):
         request = RequestFactory().get("/admin/")
@@ -179,7 +181,7 @@ class HomeAndDemoTests(TestCase):
 
     def test_course_without_lectures(self):
         Course.objects.create(title="即將推出")
-        self.assertContains(self.client.get(reverse("courses:home")), "章節準備中")
+        self.assertContains(self.client.get(reverse("courses:home")), "課程準備中")
 
     def test_seed_demo_is_repeatable_and_preserves_edits(self):
         call_command("seed_demo", stdout=StringIO())

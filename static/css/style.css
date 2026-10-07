@@ -33,7 +33,10 @@ button { border: 0; }
 .account-menu summary::-webkit-details-marker { display: none; }
 .account-panel { position: absolute; top: 42px; left: 0; min-width: 160px; background: #fff; color: var(--text); padding: 16px; border-radius: 6px; box-shadow: 0 4px 20px #0002; z-index: 5; }
 .account-panel button { margin-top: 12px; padding: 6px 14px; }
-.reader-layout { display: grid; grid-template-columns: 345px minmax(0, 1fr); height: calc(100dvh - 76px); }
+.commerce-nav { display: flex; flex-wrap: wrap; gap: 24px; padding: 10px 28px; border-bottom: 1px solid var(--line); }
+.notice { padding: 16px; background: #fff4d9; border-left: 4px solid #b95c00; line-height: 1.7; }
+.price { font-size: 24px; font-weight: 700; }
+.reader-layout { display: grid; grid-template-columns: 345px minmax(0, 1fr); height: calc(100dvh - 121px); }
 .course-sidebar { background: #faf9fc; border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
 .course-overview { padding: 28px; border-bottom: 1px solid var(--line); }
 .course-overview h2 { font-size: 18px; line-height: 1.6; margin: 0 0 22px; }

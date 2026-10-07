@@ -1,0 +1,27 @@
+{% extends "courses/base.html" %}
+{% block title %}{{ course.title }}｜課程介紹{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>{{ course.title }}</h1>
+  <div class="rich-content">{{ course.description|linebreaks }}</div>
+  <p>整套課程一次購買，不提供免費試聽。購買權限無到期日。</p>
+  {% if has_access %}
+    <p>您已擁有閱讀權限。</p>
+    {% if first %}<a class="button button-primary" href="{% url 'courses:lecture_detail' course.pk first.pk %}">開始閱讀</a>
+    {% else %}<p>章節準備中。</p>{% endif %}
+  {% elif course.price %}
+    <p class="price">整套課程 NT$ {{ course.price }}</p>
+    {% if is_test %}<p class="notice">目前為綠界測試環境，不會實際收款。測試購買權限不代表正式購買。</p>{% endif %}
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'courses:checkout' course.pk %}">
+      {% csrf_token %}
+      <button class="button button-primary" type="submit">購買整套課程</button>
+    </form>
+    {% else %}
+    <a class="button button-primary" href="{% url 'login' %}?next={% url 'courses:sales' course.pk %}">登入後購買</a>
+    {% endif %}
+  {% else %}
+    <p>本課程尚未開放販售，請聯絡管理員。</p>
+  {% endif %}
+</main>
+{% endblock %}

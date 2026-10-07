@@ -137,6 +137,22 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+PRIVATE_MEDIA_ROOT = Path(
+    os.environ.get("PRIVATE_MEDIA_ROOT") or BASE_DIR / "private_media"
+).resolve()
+if PRIVATE_MEDIA_ROOT == MEDIA_ROOT.resolve() or MEDIA_ROOT.resolve() in PRIVATE_MEDIA_ROOT.parents:
+    raise ImproperlyConfigured("私有音檔目錄不得位於公開 media 目錄內。")
+USE_X_ACCEL_REDIRECT = os.environ.get("USE_X_ACCEL_REDIRECT", "False").lower() in {
+    "true", "1", "yes",
+}
+
+ECPAY_ENVIRONMENT = os.environ.get("ECPAY_ENVIRONMENT", "test")
+if ECPAY_ENVIRONMENT not in {"test", "production"}:
+    raise ImproperlyConfigured("ECPAY_ENVIRONMENT 僅接受 test 或 production。")
+ECPAY_MERCHANT_ID = os.environ.get("ECPAY_MERCHANT_ID", "")
+ECPAY_HASH_KEY = os.environ.get("ECPAY_HASH_KEY", "")
+ECPAY_HASH_IV = os.environ.get("ECPAY_HASH_IV", "")
+SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "courses:home"
