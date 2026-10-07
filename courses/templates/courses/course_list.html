@@ -1,0 +1,18 @@
+{% extends "courses/base.html" %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>課程列表</h1>
+  {% for course in courses %}
+  <section class="course-card">
+    <h2>{{ course.title }}</h2>
+    {% with first=course.lectures.all.0 %}
+    {% if first %}
+    <a href="{% url 'courses:lecture_detail' course.pk first.pk %}">開始閱讀 →</a>
+    {% else %}<p>章節準備中，敬請期待。</p>{% endif %}
+    {% endwith %}
+  </section>
+  {% empty %}
+  <p>目前尚無課程，請管理員新增課程或執行示範資料指令。</p>
+  {% endfor %}
+</main>
+{% endblock %}

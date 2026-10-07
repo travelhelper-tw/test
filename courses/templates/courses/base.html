@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}有聲閱讀教室{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <script src="{% static 'js/lecture.js' %}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳至主要內容</a>
+  <header class="topbar">
+    <nav class="utilities" aria-label="網站導覽">
+      <a class="icon-link" href="{% url 'courses:home' %}" aria-label="首頁" title="首頁">⌂</a>
+      {% if user.is_staff %}
+      <a class="icon-link" href="{% url 'admin:index' %}" aria-label="課程設定" title="課程設定">⚙</a>
+      {% else %}
+      <details class="account-menu">
+        <summary class="icon-link" aria-label="帳號設定" title="帳號設定">⚙</summary>
+        <div class="account-panel">
+          {% if user.is_authenticated %}
+          <span>{{ user.get_username }}</span>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}<button type="submit">登出</button>
+          </form>
+          {% else %}
+          <a href="{% url 'login' %}">登入</a>
+          {% endif %}
+        </div>
+      </details>
+      {% endif %}
+    </nav>
+    <span class="brand">有聲閱讀教室</span>
+    <div class="lesson-actions">{% block actions %}{% endblock %}</div>
+    {% if user.is_authenticated and user.is_staff %}
+    <form method="post" action="{% url 'logout' %}" class="logout-form">
+      {% csrf_token %}<button class="text-button" type="submit">登出</button>
+    </form>
+    {% endif %}
+  </header>
+  {% block content %}{% endblock %}
+</body>
+</html>
