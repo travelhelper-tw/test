@@ -1,0 +1,18 @@
+{% extends "courses/base.html" %}
+{% block title %}前往綠界付款{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>確認訂單</h1>
+  <p>{{ order.course_title }} — 整套課程 NT$ {{ order.amount }}</p>
+  <p>訂單編號：{{ order.merchant_trade_no }}</p>
+  {% if order.is_test %}<p class="notice">測試交易：不會實際扣款，請勿輸入真實信用卡資料。</p>{% endif %}
+  <p>僅支援信用卡一次付款。付款成功後須等待綠界伺服器通知確認，才會開通課程。</p>
+  <form method="post" action="{{ gateway }}">
+    {% for key, value in parameters.items %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+    <button class="button button-primary" type="submit">前往綠界付款</button>
+  </form>
+  <p><a href="{% url 'courses:order_detail' order.pk %}">查看訂單狀態</a></p>
+</main>
+{% endblock %}

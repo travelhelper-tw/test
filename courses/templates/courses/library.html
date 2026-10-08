@@ -1,0 +1,13 @@
+{% extends "courses/base.html" %}
+{% block title %}已購課程{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>已購課程</h1>
+  {% for purchase in purchases %}
+  <section class="course-card">
+    <h2>{{ purchase.course.title }}</h2>
+    <a href="{% url 'courses:sales' purchase.course_id %}">前往課程 →</a>
+  </section>
+  {% empty %}<p>尚無有效課程權限，請先購買整套課程。</p>{% endfor %}
+</main>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "courses/base.html" %}
+{% block title %}{{ lecture.title }}｜{{ lecture.course.title }}{% endblock %}
+{% block actions %}
+  {% if prev %}
+  <a class="button button-outline" href="{% url 'courses:lecture_detail' lecture.course_id prev.pk %}">← 上一個課堂</a>
+  {% else %}
+  <span class="button button-outline disabled" aria-disabled="true">← 上一個課堂</span>
+  {% endif %}
+  <form method="post" action="{% url 'courses:complete' lecture.course_id lecture.pk %}">
+    {% csrf_token %}
+    <button class="button button-primary" type="submit">完成並繼續 →</button>
+  </form>
+{% endblock %}
+{% block content %}
+<div class="reader-layout">
+  <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-controls="course-sidebar" aria-expanded="true" hidden>章節目錄</button>
+  <aside id="course-sidebar" class="course-sidebar" aria-label="課程章節">
+    <div class="course-overview">
+      <h2>{{ lecture.course.title }}</h2>
+      <p class="progress-label">{{ percent }}% 進度</p>
+      <progress value="{{ percent }}" max="100" aria-label="課程完成進度">{{ percent }}%</progress>
+    </div>
+    <nav class="chapter-list" aria-label="章節目錄">
+      {% for item in lectures %}
+      <a class="chapter{% if item.pk == lecture.pk %} active{% endif %}" href="{% url 'courses:lecture_detail' lecture.course_id item.pk %}"{% if item.pk == lecture.pk %} aria-current="page"{% endif %}>
+        <span class="chapter-label">{{ item.chapter_label }}</span>
+        <span class="chapter-row">
+          <span class="status-circle{% if item.pk in done_ids %} completed{% elif item.pk == lecture.pk %} current{% endif %}" aria-hidden="true"></span>
+          <span class="sr-only">{% if item.pk in done_ids %}已完成{% elif item.pk == lecture.pk %}目前章節{% else %}未完成{% endif %}：</span>
+          {% if item.audio %}<span class="audio-icon" aria-label="音訊">♫</span>{% endif %}
+          <span>{{ item.title }}</span>
+        </span>
+      </a>
+      {% endfor %}
+    </nav>
+  </aside>
+  <main id="main-content" class="lecture-content">
+    <article>
+      <p class="eyebrow">{{ lecture.chapter_label }}</p>
+      <h1>{{ lecture.title }}</h1>
+      {% if lecture.audio %}
+      <audio controls preload="metadata" src="{{ lecture.audio.url }}" aria-label="{{ lecture.title }} 音訊">
+        您的瀏覽器不支援音訊播放器。
+      </audio>
+      {% endif %}
+      {% if lecture.cover %}
+      <img class="book-cover" src="{{ lecture.cover.url }}" alt="{{ lecture.title }} 書封">
+      {% endif %}
+      <section class="introduction" aria-labelledby="intro-title">
+        <h2 id="intro-title">內容簡介</h2>
+        <div class="rich-content">{{ lecture.content|safe }}</div>
+      </section>
+      <nav class="bottom-navigation" aria-label="課堂導覽">
+        {% if prev %}<a href="{% url 'courses:lecture_detail' lecture.course_id prev.pk %}">← 上一章</a>{% endif %}
+        {% if next %}<a href="{% url 'courses:lecture_detail' lecture.course_id next.pk %}">下一章 →</a>{% endif %}
+      </nav>
+    </article>
+  </main>
+</div>
+{% endblock %}
