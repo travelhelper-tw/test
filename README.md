@@ -28,6 +28,47 @@ MP3 存於 `private_media/`，不再提供公開的 `/media/audio/`。
 
 ## 1. 安裝（Ubuntu）
 
+### Windows 本機：使用 WSL2 Ubuntu
+
+Windows 建議使用 WSL2，在 Ubuntu 內執行 Python、MySQL 與 Django，
+避免原生 Windows 編譯 mysqlclient 的工具鏈差異。WSL 是本機環境，
+**不是公開 Ubuntu 主機**，不需先購買主機或網域。
+
+1. 在支援 WSL2 的 Windows 10／11，以系統管理員身分開啟 PowerShell：
+
+   ```powershell
+   wsl --install -d Ubuntu-24.04
+   ```
+
+   依提示重新啟動，開啟 Ubuntu，建立 Linux 使用者與密碼。
+   以下所有安裝／Django 指令都在 **Ubuntu 終端機**執行，不是 PowerShell。
+   若已裝 WSL，可先在 PowerShell 用 `wsl -l -v` 確認 Ubuntu 使用 VERSION 2。
+
+2. 將 repo 放在 WSL 的 Linux 家目錄（例如 `~/projects/test`），
+   不要沿用 Windows 的虛擬環境。可先在 Windows 檔案總管以
+   `\\wsl.localhost\Ubuntu-24.04\home\<Linux使用者>\projects` 存取目錄；
+   發行版名稱以 `wsl -l -v` 結果為準。若複製既有 repo，
+   排除 `.venv`、`.env` 和資料庫／素材備份，重新建立環境。
+3. 接續下方 Ubuntu 安裝步驟，把 `cd /你的路徑/test` 換成 repo 的實際路徑。
+   Ubuntu 24.04 的 Python 3.12 符合需求。若 WSL 未啟用 systemd，
+   以 `sudo service mysql start` 啟動 MySQL；不需安裝 Nginx 或 Gunicorn 服務。
+4. 初始化後執行 `python manage.py runserver`，在 Windows 瀏覽器開啟
+   `http://localhost:8000/`。素材可從 Windows 瀏覽器選檔上傳，
+   音檔會存入 WSL 的私有目錄，不必複製到 Git。
+5. WSL 關閉後，下次先開啟 Ubuntu、啟動 MySQL，再進入 repo：
+
+   ```bash
+   source .venv/bin/activate
+   set -a
+   source .env
+   set +a
+   python manage.py runserver
+   ```
+
+先保持 `DEBUG=True`、`ECPAY_ENVIRONMENT=test`、
+`USE_X_ACCEL_REDIRECT=False`；沒有綠界資料時保留相關金鑰及 `SITE_URL` 空白。
+不要為了讓結帳成功而填入虛構金鑰。不要將本機 runserver 對外公開。
+
 需 MySQL 8.0+，不要用 SQLite 替代實際的 MySQL 環境。
 
 ```bash
@@ -101,7 +142,24 @@ python manage.py runserver
 開啟 `http://127.0.0.1:8000/`，首頁顯示課程列表與公開銷售頁；
 章節頁會要求先登入，未購買者會返回銷售頁，不會取得章節內容。
 示範資料只有原創佔位文字，不含素材；重複執行不會新增重複章節或覆寫管理員修改。
-示範課程不預設售價或開通權限；請在後台設定，或用 superuser 預覽。
+**新建**示範課程售價為已確認的 **NT$ 3,680／整套課程**，
+不會自動開通權限。已存在的示範課程價格（包括留空）不會被覆寫，
+請在後台手動改為 `3680`；其他課程仍需管理員自行設定售價。
+示範資料不是您實際的有聲書，請自行建立正式課程並上傳授權素材。
+
+### 尚無主機／網域／綠界資料時的本機驗證
+
+1. 用 superuser 登入 `/admin/`，確認課程價格為 `3680`，上傳 MP3 與書封，
+   進入章節檢查播放器、圖片及內容。請勿將素材提交至 repo。
+2. 建立一般讀者帳號，用另一個瀏覽器或無痕視窗登入：
+   未購買者只能看到銷售介紹，進入章節應返回銷售頁。
+3. 未設定綠界資料時，購買操作應顯示付款服務尚未設定的訊息，
+   不會建立付款成功紀錄或開通課程。這不是實際 sandbox 付款驗收。
+4. 管理員在後台為讀者新增「僅限測試環境的權限」，確認可閱讀／播放，
+   然後撤銷有效權限，確認後續章節及音檔請求遭到阻擋。
+   手動測試權限不代表已付款，不能當作正式購買。
+5. 主機、HTTPS 網域及綠界測試資料取得後，再依下方部署與綠界驗收章節操作；
+   驗收前保持測試環境，不切換正式金流。
 
 ### 後台與素材
 

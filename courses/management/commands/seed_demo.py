@@ -5,11 +5,13 @@ from courses.models import Course, Lecture
 
 
 class Command(BaseCommand):
-    help = "建立原創佔位課程與三個章節；重複執行不會覆寫既有章節。"
+    help = "建立售價 NT$ 3,680 的原創佔位課程；不覆寫既有課程價格或章節。"
 
     @transaction.atomic
     def handle(self, *args, **options):
-        course, _ = Course.objects.get_or_create(title="示範課程：慢讀與聆聽")
+        course, _ = Course.objects.get_or_create(
+            title="示範課程：慢讀與聆聽", defaults={"price": 3680}
+        )
         titles = ["閱讀的起點", "建立聆聽習慣", "回顧與練習"]
         labels = ["第一章", "第二章", "第三章"]
         for order, (label, title) in enumerate(zip(labels, titles), start=1):

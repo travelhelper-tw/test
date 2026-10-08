@@ -176,6 +176,25 @@ class LectureTests(TestCase):
 
 
 class HomeAndDemoTests(TestCase):
+    def test_new_demo_course_has_confirmed_price_without_granting_access(self):
+        call_command("seed_demo", stdout=StringIO())
+        course = Course.objects.get()
+        self.assertEqual(course.price, 3680)
+        self.assertContains(
+            self.client.get(reverse("courses:sales", args=[course.pk])), "NT$ 3680"
+        )
+        self.assertFalse(Purchase.objects.exists())
+
+    def test_demo_preserves_existing_price_including_disabled_sales(self):
+        course = Course.objects.create(title="示範課程：慢讀與聆聽")
+        for price in [None, 2400]:
+            with self.subTest(price=price):
+                course.price = price
+                course.save()
+                call_command("seed_demo", stdout=StringIO())
+                course.refresh_from_db()
+                self.assertEqual(course.price, price)
+
     def test_empty_site(self):
         self.assertContains(self.client.get(reverse("courses:home")), "目前尚無課程")
 
