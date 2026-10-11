@@ -136,6 +136,8 @@ def validate(path, db, report_path):
                     record = {"source_sheet": sheet, "source_row": row_no}
                     for field in fields:
                         v = values[headers.index(field)]
+                        if field not in ("report_date", "prod_date", "revision_no", "input_boards", "is_complete") and v is not None and not isinstance(v, str):
+                            issue(sheet, row_no, field, "識別碼與文字欄位須使用文字型別，避免數值轉文字失真")
                         if isinstance(v, str):
                             if v.startswith("="):
                                 issue(sheet, row_no, field, "不接受公式，請填寫明確值")

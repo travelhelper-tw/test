@@ -367,6 +367,24 @@ def test_formula_rejected(case):
         ingest(case)
 
 
+@pytest.mark.parametrize("field", ["F2", "A2", "C2", "E2"])
+def test_numeric_identifiers_rejected(case, field):
+    edit(case, lambda w: setattr(w["缺陷紀錄"][field], "value", 123))
+    with pytest.raises(QualityError, match="阻擋"):
+        ingest(case)
+    _, db = case
+    assert db.execute("SELECT COUNT(*) FROM import_batch").fetchone()[0] == 0
+
+
+def test_mixed_board_types_cannot_bypass_conflict(case):
+    def mutate(w):
+        w["缺陷紀錄"]["F2"] = 123
+        w["缺陷紀錄"]["F6"] = "123"
+    edit(case, mutate)
+    with pytest.raises(QualityError, match="阻擋"):
+        ingest(case)
+
+
 def test_export_text_not_formula(case):
     ingest(case)
     base, db = case
