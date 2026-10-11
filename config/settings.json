@@ -1,0 +1,14 @@
+{
+  "rule_version": "2026.1",
+  "rate_multiplier": 2,
+  "min_input": 100,
+  "min_bad": 3,
+  "seed": 20261005,
+  "modes": {"case": "data/case", "demo": "data/demo"},
+  "defect_codes": {
+    "SHORT": ["短路", "焊接"],
+    "INSUF": ["錫少", "焊接"],
+    "SHIFT": ["偏移", "組裝"],
+    "MISSING": ["漏件", "組裝"]
+  }
+}
