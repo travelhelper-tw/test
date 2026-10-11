@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 import pandas as pd
 from openpyxl import Workbook
 
-from .core import ROOT, QualityError, atomic_workbook, iso_week, settings
+from .core import ROOT, QualityError, analysis_lock, atomic_workbook, iso_week, settings
 
 
 def query(db, name, params=None):
@@ -13,6 +13,17 @@ def query(db, name, params=None):
 
 
 def frames(db):
+    owns_transaction = not db.in_transaction
+    if owns_transaction:
+        db.execute("BEGIN")
+    try:
+        return snapshot_frames(db)
+    finally:
+        if owns_transaction:
+            db.rollback()
+
+
+def snapshot_frames(db):
     cfg = settings()
     production = query(db, "daily_summary.sql")
     if production.empty:
@@ -88,6 +99,11 @@ def frames(db):
 
 
 def export(db, path):
+    with analysis_lock(db):
+        return export_locked(db, path)
+
+
+def export_locked(db, path):
     data = frames(db)
     wb = Workbook()
     wb.remove(wb.active)

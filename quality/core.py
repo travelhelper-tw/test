@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import sqlite3
+from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from uuid import uuid4
 
@@ -60,6 +61,25 @@ def connect(path):
 def digest(path):
     with open(path, "rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+@contextmanager
+def analysis_lock(db):
+    database_path = db.execute("PRAGMA database_list").fetchone()[2]
+    archive = Path(database_path).parent / "archive"
+    archive.mkdir(parents=True, exist_ok=True)
+    lock = archive / ".import.lock"
+    try:
+        handle = lock.open("x", encoding="utf-8")
+    except FileExistsError as exc:
+        raise QualityError("匯入或匯出鎖存在，請先完成操作或恢復中斷資料") from exc
+    handle.close()
+    try:
+        if list(archive.glob("*.pending")):
+            raise QualityError("存在中斷封存／備份，禁止分析，請先恢復")
+        yield
+    finally:
+        lock.unlink(missing_ok=True)
 
 
 def atomic_workbook(workbook, path, required):

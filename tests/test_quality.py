@@ -327,6 +327,47 @@ def test_excel_save_failure_keeps_old(case, monkeypatch):
     assert path.read_bytes() == old
 
 
+def test_export_blocks_concurrent_import(case, monkeypatch):
+    from quality import analysis
+    ingest_all(case)
+    base, db = case
+    original = analysis.frames
+    def guarded(connection):
+        with pytest.raises(QualityError, match="匯入鎖"):
+            ingest(case, "品質日報_2026-10-05_v2.xlsx", True)
+        return original(connection)
+    monkeypatch.setattr(analysis, "frames", guarded)
+    result = export(db, base / "output/品質分析.xlsx")
+    assert result["weekly_priority"].input_boards.sum() == 590
+    assert not (base / "archive/.import.lock").exists()
+
+
+def test_frames_use_single_sqlite_snapshot(case, monkeypatch):
+    from quality import analysis
+    ingest_all(case)
+    base, db = case
+    db.execute("PRAGMA journal_mode=WAL")
+    other = connect(base / "quality.sqlite3")
+    original = analysis.query
+    changed = False
+    def query_with_commit(connection, name, params=None):
+        nonlocal changed
+        result = original(connection, name, params)
+        if not changed:
+            other.execute("UPDATE production_input SET input_boards=120 WHERE line='L1' AND shift='早'")
+            other.commit()
+            changed = True
+        return result
+    monkeypatch.setattr(analysis, "query", query_with_commit)
+    try:
+        data = frames(db)
+        assert data["fact_production"].input_boards.sum() == 590
+        assert data["weekly_priority"].input_boards.sum() == 590
+        assert db.execute("SELECT SUM(input_boards) FROM production_input").fetchone()[0] == 610
+    finally:
+        other.close()
+
+
 def test_sunday_alone_not_complete(tmp_path):
     day = date(2026, 10, 11)
     path = tmp_path / "日報.xlsx"
@@ -359,6 +400,8 @@ def test_archive_lock_blocks_second_import(case):
         ingest(case)
     assert lock.exists()
     assert db.execute("SELECT COUNT(*) FROM import_batch").fetchone()[0] == 0
+    with pytest.raises(QualityError, match="鎖"):
+        export(db, base / "output/品質分析.xlsx")
 
 
 def test_formula_rejected(case):
