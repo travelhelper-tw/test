@@ -35,6 +35,8 @@ CodeQL Python 實測 0 警示；自動 code review 因模型不可用失敗，�
 
 ## 核心介面
 
+先完成[操作手冊第 0 步](docs/操作手冊.md#第-0-步下載正確版本解壓縮用-vs-code-開啟專案)：從 `copilot/create-electronic-assembly-quality-analysis-projec` 分支或教練指定的固定提交下載；核對來源與根目錄後才確認環境。保留原專案，不重建功能。正常教學發現鎖／pending 殘留先停止並回報；人工恢復僅見手冊附錄 A，不要求強制斷電。
+
 ### 直接跑已附資料（開箱流程）
 
 儲存庫已附 `raw` 日報，首次直接 `run`，**不要先 `generate`**。生成器禁止覆蓋已存在日報。Windows 一律直接呼叫虛擬環境 Python，不啟用環境、不修改執行原則：
@@ -46,7 +48,7 @@ py -3.12 -m venv venv6
 .\venv6\Scripts\python.exe -m quality run --mode demo
 ```
 
-案例與展示模式皆直接使用已附資料，不需生成。
+案例與展示模式皆直接使用已附資料，不需生成。`run` 已包含分析 Excel 匯出，正常流程不再重複 `export`；`export` 用於已有 SQLite 資料的單獨重新匯出，或僅執行 `import` 後產生新版分析 Excel。
 
 ### 要生成新資料（另設空資料夾）
 
@@ -63,12 +65,11 @@ py -3.12 -m venv venv6
 .\venv6\Scripts\python.exe -m quality run --mode case
 .\venv6\Scripts\python.exe -m quality generate --mode demo
 .\venv6\Scripts\python.exe -m quality run --mode demo
-.\venv6\Scripts\python.exe -m quality export --mode demo
 ```
 
 ### 修正版與封裝（另行操作）
 
-v2 僅在獨立副本驗收。若仍用原設定，修正版路徑如下；若設定改為 `data/new_case`，須同步改成 `data/new_case/revisions/...`：
+v2 僅在獨立副本驗收；依操作手冊第 3.2.2 節重新解壓同提交或排除環境後複製，核對副本目前資料夾，重建 venv6 與指定副本解譯器，**不可直接使用原環境**。若仍用原設定，修正版路徑如下；若設定改為 `data/new_case`，須同步改成 `data/new_case/revisions/...`：
 
 ```powershell
 .\venv6\Scripts\python.exe -m quality import --mode case --file data/case/revisions/品質日報_2026-10-05_v2.xlsx --yes
@@ -76,7 +77,7 @@ v2 僅在獨立副本驗收。若仍用原設定，修正版路徑如下；若�
 .\venv6\Scripts\python.exe -m quality package
 ```
 
-不要刪除已附日報來繞過生成器保護。Linux 封裝允許清單已實測；ZIP 位於被忽略的 `deliverables`，不提交，但可用 `package` 重產，詳見交付指南。
+不要刪除已附日報來繞過生成器保護。Linux 封裝允許清單已實測；ZIP 位於被忽略的 `deliverables`，不提交，但可用 `package` 重產，詳見交付指南。**自動 ZIP 不包含 .pbix；使用者已完成且驗收的報表必須另行交付**，連同實際版本與驗收紀錄。尚未建立／驗收者保持待驗證，不冒稱成品。
 
 ## 資料與交付結構
 
