@@ -1,0 +1,22 @@
+{% extends "courses/base.html" %}
+{% block title %}登入｜有聲閱讀教室{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <section class="login-card">
+    <p class="eyebrow">歡迎回來</p>
+    <h1>登入閱讀教室</h1>
+    <p>登入後即可聆聽課程並記錄閱讀進度。</p>
+    {% if form.errors %}<p class="error-message" role="alert">帳號或密碼有誤，請重新輸入。</p>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="{{ form.username.id_for_label }}">帳號</label>
+      {{ form.username }}
+      <label for="{{ form.password.id_for_label }}">密碼</label>
+      {{ form.password }}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="button button-primary" type="submit">登入</button>
+    </form>
+    <p class="help-text">尚無帳號？請聯絡課程管理員建立帳號。</p>
+  </section>
+</main>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "courses/base.html" %}
+{% block title %}訂單紀錄{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>訂單紀錄</h1>
+  {% for order in orders %}
+  <section class="course-card">
+    <h2>{{ order.course_title }}</h2>
+    <p>NT$ {{ order.amount }} — {{ order.get_status_display }}{% if order.is_test %}（測試）{% endif %}</p>
+    <a href="{% url 'courses:order_detail' order.pk %}">{{ order.merchant_trade_no }}</a>
+  </section>
+  {% empty %}<p>尚無訂單。</p>{% endfor %}
+</main>
+{% endblock %}

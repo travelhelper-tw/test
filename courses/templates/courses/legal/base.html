@@ -1,0 +1,19 @@
+{% extends "courses/base.html" %}
+{% block title %}{{ legal_title }}｜有聲閱讀教室{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page legal-page">
+  <h1>{{ legal_title }}</h1>
+  <p>文件版本：{{ policy_version }}</p>
+  {% if not legal_ready %}
+  <p class="notice" role="status">待審核範本：營運資料或法律審核尚未完成，不代表網站已正式營運。營運者須確認實際服務與適用法令後再開放正式收款。</p>
+  {% endif %}
+  <section class="course-card">
+    <h2>營運者與聯絡方式</h2>
+    <p>名稱：{{ seller_name|default:"尚未設定" }}</p>
+    <p>聯絡地址：{{ seller_address|default:"尚未設定" }}</p>
+    <p>客服信箱：{{ support_email|default:"尚未設定，請勿付款" }}</p>
+  </section>
+  {% block policy %}{% endblock %}
+  <p><a href="{% url 'courses:home' %}">返回課程列表</a></p>
+</main>
+{% endblock %}

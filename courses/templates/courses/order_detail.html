@@ -1,0 +1,19 @@
+{% extends "courses/base.html" %}
+{% block title %}訂單狀態{% endblock %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>訂單狀態</h1>
+  <p>{{ order.course_title }} — NT$ {{ order.amount }}</p>
+  <p>訂單編號：{{ order.merchant_trade_no }}</p>
+  <p>狀態：{{ order.get_status_display }}</p>
+  {% if order.is_test %}<p class="notice">此訂單來自測試環境。</p>{% endif %}
+  {% if has_access %}
+  <a href="{% url 'courses:sales' order.course_id %}">前往已購課程 →</a>
+  {% elif order.status == "paid" %}
+  <p>付款已確認，但閱讀權限已停用。請聯絡管理員。</p>
+  {% else %}
+  <p>返回本頁不代表付款成功，需由綠界通知確認。若已完成付款，請稍後重新整理；仍未更新請聯絡管理員。</p>
+  {% endif %}
+  <p><a href="{% url 'courses:orders' %}">所有訂單</a></p>
+</main>
+{% endblock %}

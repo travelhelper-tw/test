@@ -1,0 +1,15 @@
+{% extends "courses/base.html" %}
+{% block content %}
+<main id="main-content" class="simple-page">
+  <h1>課程列表</h1>
+  {% for course in courses %}
+  <section class="course-card">
+    <h2>{{ course.title }}</h2>
+    {% if course.price %}<p>整套課程 NT$ {{ course.price }}</p>{% else %}<p>課程準備中，敬請期待。</p>{% endif %}
+    <a href="{% url 'courses:sales' course.pk %}">查看課程介紹 →</a>
+  </section>
+  {% empty %}
+  <p>目前尚無課程，請管理員新增課程或執行示範資料指令。</p>
+  {% endfor %}
+</main>
+{% endblock %}

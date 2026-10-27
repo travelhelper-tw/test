@@ -1,0 +1,22 @@
+[Unit]
+Description=Django course reader (Gunicorn)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=course-reader
+Group=www-data
+WorkingDirectory=/srv/course-reader
+EnvironmentFile=/etc/course-reader.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/course-reader/.venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 3 --access-logfile - --error-logfile -
+Restart=on-failure
+RestartSec=5
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

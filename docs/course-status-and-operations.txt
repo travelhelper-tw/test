@@ -1,0 +1,297 @@
+有聲課程網站｜進度與操作整理
+整理日期：2026-10-27
+第三階段更新：已加入公開法律範本、銷售資訊、結帳條款確認與上線自檢。
+這些是程式／部署準備，不代表法律審核、Windows 安裝或公開上線完成。
+法律頁須由營運者補齊實際規則、聯絡資料及審核後才能啟用正式收款。
+適用專案：travelhelper-tw/test
+
+一、先看結論
+============
+網站程式已建立，目前下一步是確認您的 Windows／WSL 環境，
+在本機啟動網站，再透過後台上傳實際素材。
+「程式完成」不代表「您的電腦已安裝完成」，也不代表「網站已公開上線」。
+本文件只是整理現況與操作，不會替您安裝電腦、變更資料庫或上傳素材。
+
+已確認需求：
+- 使用者電腦：Windows。
+- 整套課程售價：NT$ 3,680。
+- 金流：綠界，信用卡一次付款，整套課程販售。
+- 不開放免費試聽。
+- 目前程式的購買權限無到期日，管理員可以撤銷；正式銷售條款仍待確認。
+- 您表示已有素材，但尚未確認已上傳。
+- 依最後回報，尚無公開 Ubuntu 主機、網域及綠界測試商店資料。
+
+二、進度總表
+============
+狀態說明：「程式完成」為 repo 已有實作；「未確認」表示尚未收到您的操作結果。
+
+項目                                狀態
+繁體中文課程閱讀頁與手機目錄          程式完成
+登入／登出、章節導覽與個人進度        程式完成
+課程／章節後台、MP3 與書封上傳        程式完成
+銷售頁、訂單紀錄、已購課程            程式完成
+綠界結帳表單、付款通知驗簽            程式完成，尚待實際商店驗收
+購買權限開通／撤銷、私有音檔          程式完成
+新建示範課程預設價格 3680             程式完成；不覆寫既有課程價格
+Windows／WSL2 安裝文件                已提供；您的電腦尚未確認完成
+WSL2／Ubuntu／MySQL 本機安裝           未確認
+本機首頁與後台可開啟                  未確認
+正式課程資料、實際素材上傳            未確認
+公開主機、網域、HTTPS                 尚未準備（依最後回報）
+綠界測試環境設定與實際 sandbox 交易   尚未完成
+正式金流啟用與對外販售                尚未進行
+
+先前開發驗證紀錄（不是本次重新執行，也不是您的 Windows 驗收）：
+- 最近一次回報：42 個 MySQL 測試通過。
+- 已回報驗證付款通知、並行重送、權限隔離與撤銷。
+- 已回報 Gunicorn＋Nginx HTTPS 私有音檔／Range 請求驗證通過。
+- 已回報 CodeQL 無警示、機密掃描通過。
+- 尚未使用您的綠界資料完成真實 sandbox 交易。
+
+三、目前不包含的功能
+====================
+- 自助註冊：讀者帳號由管理員建立。
+- 電子發票、自動退款、自動金流對帳。
+- 訂閱、分期、單章販售。
+- DRM：購買者仍可能保存已取得的音檔，無法保證不被複製。
+- 商業授權、服務條款、隱私政策與退款政策的法律確認。
+
+四、Windows 第一次操作：依順序執行
+=================================
+操作位置請分清楚：
+A. Windows PowerShell：安裝／查看 WSL。
+B. Ubuntu 終端機：安裝 MySQL、執行 Python／Django。
+C. Windows 瀏覽器：查看網站、登入後台與選擇素材。
+
+步驟 1｜確認或安裝 WSL2
+操作位置：以系統管理員身分開啟 Windows PowerShell。
+
+先查看：
+    wsl -l -v
+
+如果尚未安裝 Ubuntu：
+    wsl --install -d Ubuntu-24.04
+
+依提示重新啟動，開啟 Ubuntu，建立 Linux 使用者與密碼。
+再次查看 wsl -l -v，確認 Ubuntu 的 VERSION 為 2。
+若發生錯誤，先保留錯誤文字回報，不要反覆重裝或刪除既有 WSL 資料。
+成功判準：能開啟 Ubuntu 終端機。
+
+步驟 2｜放置程式碼
+操作位置：Ubuntu／Windows 檔案總管。
+
+將最新 repo 放入 WSL 的 Linux 家目錄。
+例如您的 repo 絕對路徑可以是 /home/您的Linux帳號/projects/test。
+下列指令中的「您的Linux帳號」必須換成真實帳號；不是雲端代理工作目錄。
+
+Windows 檔案總管可使用：
+    \\wsl.localhost\Ubuntu-24.04\home\您的Linux帳號\projects
+
+發行版名稱以 wsl -l -v 結果為準。若 projects 不存在，先在 Ubuntu 建立。
+確認 repo 內有 manage.py、requirements.txt、README.md。
+不要搬用 Windows 的 .venv，不要將私密設定／素材備份提交到 Git。
+
+步驟 3｜安裝系統套件
+操作位置：Ubuntu 終端機。
+
+    sudo apt update
+    sudo apt install python3 python3-venv python3-dev build-essential pkg-config default-libmysqlclient-dev mysql-server
+    sudo service mysql start
+    python3 --version
+
+成功判準：Python 3.11 以上，MySQL 可以啟動。
+本機階段不必設定 Nginx、公開網域或正式金流。
+
+步驟 4｜建立 Python 環境
+操作位置：Ubuntu 終端機。
+
+    cd /home/您的Linux帳號/projects/test
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+
+首次尚無 .env 時才執行：
+    cp .env.example .env
+    chmod 600 .env
+
+若已有 .env，先保留，不要覆蓋。使用文字編輯器（例如 nano .env）填入設定。
+產生 SECRET_KEY：
+    python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+將產生值填入 .env，使用單引號包住；不要貼到對話或提交到 Git。
+
+步驟 5｜建立 MySQL 資料庫
+操作位置：Ubuntu 終端機，進入 MySQL：
+    sudo mysql
+
+以下只適用首次建立；密碼佔位文字要改成您自行設定的強密碼：
+    CREATE DATABASE course_reader CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE USER 'course_reader'@'127.0.0.1' IDENTIFIED BY '<自行設定強密碼>';
+    GRANT ALL PRIVILEGES ON course_reader.* TO 'course_reader'@'127.0.0.1';
+    EXIT;
+
+若顯示資料庫／帳號已存在，不要刪除資料庫，先確認既有設定。
+若 sudo mysql 要求驗證而無法進入，請回報不含密碼的錯誤訊息。
+
+步驟 6｜完成 .env
+操作位置：Ubuntu 的 repo 目錄。
+
+應設定：
+    DB_NAME=course_reader
+    DB_USER=course_reader
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DEBUG=True
+    ALLOWED_HOSTS=localhost,127.0.0.1
+    ECPAY_ENVIRONMENT=test
+    USE_X_ACCEL_REDIRECT=False
+
+DB_PASSWORD 填入步驟 5 的相同密碼，並用單引號包住。
+SECRET_KEY 填入步驟 4 產生的值，並用單引號包住。
+目前 ECPAY_MERCHANT_ID、ECPAY_HASH_KEY、ECPAY_HASH_IV、SITE_URL 留空。
+PRIVATE_MEDIA_ROOT 可留空，使用 repo 內的私有目錄。
+不要填入虛構金鑰，不要改成 production。
+
+Django 不會自行讀取 .env；在 Ubuntu 載入：
+    set -a
+    source .env
+    set +a
+
+步驟 7｜初始化及啟動
+操作位置：相同 Ubuntu 終端機，需已啟用 .venv 及載入 .env。
+
+    python manage.py check
+    python manage.py migrate
+    python manage.py createsuperuser
+    python manage.py seed_demo
+    python manage.py runserver
+
+記住自己建立的管理員帳號；密碼不會顯示在終端機中是正常現象。
+seed_demo 只建立原創佔位文字，不會產生您的實際音檔、書封或購買權限。
+新建示範課程售價為 3680；既有課程仍須在後台確認。
+
+操作位置：Windows 瀏覽器。
+    首頁：http://localhost:8000/
+    後台：http://localhost:8000/admin/
+
+成功判準：首頁可開啟，superuser 可以登入後台。
+Ubuntu 終端機需保持執行；Ctrl+C 可停止伺服器。
+此網址只供本機開發，沒有公開上線。
+
+五、後台建立實際課程與上傳素材
+==============================
+1. 用 superuser 登入後台，在「課程」新增實際課程。
+2. 填課程名稱、公開銷售介紹、整套售價 3680。
+   公開介紹不要放完整付費章節；不是把每章各訂 3680。
+3. 在「章節」新增資料：選擇課程、填章節標籤、標題與排序。
+   建議排序 10、20、30，方便日後插入；相同排序以章節 ID 決定先後。
+4. 上傳 MP3；書封支援 JPG、JPEG、PNG、WebP。
+   可以直接從 Windows 瀏覽器選擇本機檔案。
+5. 填寫內容簡介並儲存，再開啟章節預覽。
+   內容可使用 HTML，但只限受信任的 superuser；不要貼來源不明的程式碼。
+6. 用 superuser 檢查音訊、書封、文字、上一章／下一章及「完成並繼續」。
+7. 建立一般讀者帳號，另開無痕視窗測試；不要只用管理員驗收權限。
+
+素材安全：
+- MP3 上傳後放在 private_media，不要另放公開下載連結。
+- media/covers 的書封可公開；請確認也有使用權。
+- 原始素材另行備份，不要提交 Git。
+- 若以前已有公開 media/audio，先依 README 的升級章節搬移，
+  不要手動刪除唯一副本；該搬移指令核對後會刪除公開副本。
+
+六、沒有綠界資料時，先完成本機驗收
+================================
+[ ] 首頁顯示正確課程與售價 NT$ 3,680。
+[ ] 未登入者無法直接讀取章節。
+[ ] 一般讀者未購買時，只能看銷售介紹，章節請求返回銷售頁。
+[ ] 未設定綠界時，購買顯示付款服務尚未設定，不會開通課程。
+[ ] superuser 可預覽全部章節（這是管理權限，不是付款成功）。
+[ ] 後台為一般讀者新增「購買權限」：
+    選對使用者／課程，勾「有效購買權限」與「僅限測試環境的權限」。
+[ ] 該讀者可以閱讀／播放，並在「已購課程」看到課程。
+[ ] 完成章節後進度更新，且不影響其他使用者／其他課程。
+[ ] 管理員撤銷有效權限後，讀者後續章節及音檔請求被阻擋。
+[ ] 手機或窄視窗可以展開／收合章節目錄。
+
+手動開通只是在驗證權限，不是已付款證明。
+撤銷不會收回已下載或已開始傳送的檔案；也不會自動退款。
+測試完保留停用紀錄，不要把測試帳號權限當成正式買家。
+
+七、下次重新開機後如何啟動
+==========================
+開啟 Ubuntu，依序執行（請換成實際絕對路徑）：
+    sudo service mysql start
+    cd /home/您的Linux帳號/projects/test
+    source .venv/bin/activate
+    set -a
+    source .env
+    set +a
+    python manage.py runserver
+
+再用 Windows 瀏覽器開啟 http://localhost:8000/。
+如果 8000 已被使用，先確認是否已有伺服器；需要另一個埠可用：
+    python manage.py runserver 8001
+並改開 http://localhost:8001/。
+
+八、常見問題與回報方式
+======================
+- 找不到 python／django：確認在 Ubuntu，且已 source .venv/bin/activate。
+- SECRET_KEY 未設定：確認 .env 已填寫，且已用 set -a／source／set +a 載入。
+- MySQL 連線失敗：確認服務啟動，DB_HOST／帳號／密碼與授權一致。
+- 價格未顯示 3680：既有價格不會被 seed_demo 覆寫，請到後台編輯。
+- 看不到播放器／書封：先確認章節有上傳對應素材並儲存。
+- 一般帳號被導回銷售頁：確認該使用者在該課程的權限有效。
+- 綠界尚未設定：現階段預期如此；localhost 不能接收外網付款通知。
+
+回報請附：執行到哪一步、使用 PowerShell 還是 Ubuntu、
+不含秘密的錯誤文字、預期與實際畫面。
+不要提供整份 .env、密碼、SECRET_KEY、HashKey、HashIV、私鑰或登入 cookie。
+
+九、之後才處理：公開測試站與正式販售
+==================================
+公開測試站準備：
+[ ] 取得可管理的 Ubuntu 主機與網域，確認主機／網域由您持有。
+[ ] 設定 DNS 與有效 HTTPS 憑證。
+[ ] 依 README 安裝 Gunicorn、Nginx、MySQL 與服務帳號。
+[ ] 設定 DEBUG=False、正確 ALLOWED_HOSTS 與 SITE_URL。
+[ ] 使用環境變數設定綠界測試資料，不放進 Git。
+[ ] PRIVATE_MEDIA_ROOT 與 Nginx internal alias 一致，
+    USE_X_ACCEL_REDIRECT=True，私有目錄不得另設公開入口。
+[ ] 確認資料庫與音檔有非公開備份，MySQL 與 Gunicorn 不對外開放。
+
+綠界 sandbox 驗收：
+[ ] 使用官方測試信用卡，不輸入真實卡號。
+[ ] 測試付款成功／失敗；返回訂單頁本身不能開通課程。
+[ ] 確認通知商店、訂單、金額及簽章核對正確。
+[ ] 成功通知後才開通；偽造／錯誤金額／模擬通知不開通。
+[ ] 重送通知不重複處理；撤銷後重送舊通知不能恢復權限。
+[ ] 未購買、其他課程買家、已撤銷者均不能取得音檔。
+[ ] 直接公開音檔 URL 被拒絕，正常購買者可播放／跳播。
+
+正式販售前：
+[ ] 綠界正式商店已核准，使用正式資料，與測試環境分離。
+[ ] 決定電子發票與退款處理方式，確認授權及服務／隱私／退款條款。
+[ ] 確認無到期日存取承諾是否符合實際營運安排。
+[ ] 確認帳號建立與客服流程（目前沒有自助註冊）。
+[ ] 正式驗收完成後才切換 production；測試購買權限不能當正式購買。
+
+十、參考與下一次回報
+====================
+本文件以對話確認事項及目前 repo 的 README、.env.example、
+seed_demo、後台與權限實作為依據；詳細部署指令仍以 README 為準。
+目前沒有對您的 Windows 電腦做遠端安裝，也沒有代為申請主機或金流。
+
+下一次只需先回報：
+1. wsl -l -v 是否能看到 Ubuntu，VERSION 是否為 2？
+2. 是否可以開啟 Ubuntu 終端機？
+3. 最新 repo 放在哪個絕對路徑？
+4. 若已執行到後續步驟，請填到第幾步及結果，不含任何秘密。
+
+您的操作紀錄（自行填寫，不放密碼）：
+日期：________________
+已完成步驟：________________
+目前卡住位置／錯誤：________________
+本機首頁是否能開啟：________________
+後台是否能登入：________________
+實際素材已上傳章節數：________________
+下次要做：________________
