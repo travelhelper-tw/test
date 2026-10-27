@@ -1,10 +1,28 @@
 {% extends "courses/base.html" %}
 {% block title %}{{ course.title }}｜課程介紹{% endblock %}
 {% block content %}
-<main id="main-content" class="simple-page">
+<main id="main-content" class="simple-page sales-page">
+  <p class="eyebrow">有聲閱讀・整套課程</p>
   <h1>{{ course.title }}</h1>
+  {% if not legal_ready %}<p class="notice">營運與法律資料尚待確認。目前僅供測試，不能視為正式銷售公告。</p>{% endif %}
   <div class="rich-content">{{ course.description|linebreaks }}</div>
   <p>整套課程一次購買，不提供免費試聽。購買權限無到期日。</p>
+  <section class="sales-features" aria-label="課程特色">
+    <div><h2>{{ chapter_count }} 個章節</h2><p>登入後依自己的步調閱讀，已購者可查看完整內容。</p></div>
+    <div><h2>閱讀與聆聽</h2><p>章節可提供 MP3、書封與文字簡介，實際素材以課程內容為準。</p></div>
+    <div><h2>記錄學習進度</h2><p>完成章節後保留個人進度，可使用電腦或手機閱讀。</p></div>
+  </section>
+  <section class="course-card">
+    <h2>購買前須知</h2>
+    <ul class="purchase-notes">
+      <li>以新臺幣計價，信用卡一次付款；不收取訂閱費。</li>
+      <li>帳號由管理員建立，尚無帳號請先聯絡客服。請勿重複付款。</li>
+      <li>綠界通知確認成功後開通整套課程，可從「已購課程」進入。</li>
+      <li>需網路與支援 HTML5 音訊的瀏覽器；本網站不提供免費試聽。</li>
+      <li>權限沒有設定到期日；服務異動與退款處理請閱讀下方政策，並非永久託管保證。</li>
+    </ul>
+    <p><a href="{% url 'courses:refunds' %}">付款異常、退款與客服說明 →</a></p>
+  </section>
   {% if has_access %}
     <p>您已擁有閱讀權限。</p>
     {% if first %}<a class="button button-primary" href="{% url 'courses:lecture_detail' course.pk first.pk %}">開始閱讀</a>
@@ -15,6 +33,13 @@
     {% if user.is_authenticated %}
     <form method="post" action="{% url 'courses:checkout' course.pk %}">
       {% csrf_token %}
+      <input type="hidden" name="policy_version" value="{{ policy_version }}">
+      <label class="terms-confirmation">
+        <input type="checkbox" name="accept_terms" value="yes" required>
+        我已閱讀並同意<a href="{% url 'courses:terms' %}">服務條款</a>與
+        <a href="{% url 'courses:refunds' %}">退款政策</a>，並已閱悉
+        <a href="{% url 'courses:privacy' %}">隱私權政策</a>（{{ policy_version }}）。
+      </label>
       <button class="button button-primary" type="submit">購買整套課程</button>
     </form>
     {% else %}

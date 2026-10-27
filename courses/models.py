@@ -93,6 +93,8 @@ class Order(models.Model):
     gateway_trade_no = models.CharField("綠界交易編號", max_length=20, unique=True, null=True, blank=True)
     created_at = models.DateTimeField("建立時間", auto_now_add=True)
     paid_at = models.DateTimeField("付款時間", null=True, blank=True)
+    policy_version = models.CharField("結帳條款版本", max_length=30, blank=True)
+    terms_accepted_at = models.DateTimeField("條款確認時間", null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

@@ -15,6 +15,7 @@ from django.urls import reverse
 
 from .models import Course, Lecture, Order, Purchase, PaymentNotification, Progress
 from .payments import check_mac_value
+from .legal import POLICY_VERSION
 
 
 PAYMENT_SETTINGS = {
@@ -61,7 +62,10 @@ class CommerceTests(TestCase):
         self.client.force_login(self.user)
 
     def checkout(self):
-        response = self.client.post(reverse("courses:checkout", args=[self.course.pk]))
+        response = self.client.post(
+            reverse("courses:checkout", args=[self.course.pk]),
+            {"accept_terms": "yes", "policy_version": POLICY_VERSION},
+        )
         self.assertEqual(response.status_code, 200)
         return response, response.context["order"]
 

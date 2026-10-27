@@ -12,6 +12,7 @@ from django.views.decorators.http import require_GET, require_POST
 from .access import can_read_course, readable_purchases
 from .models import Course, Order, PaymentNotification, Purchase
 from .payments import checkout_parameters, payment_config, verified_notification
+from .legal import POLICY_VERSION, legal_ready
 
 
 @never_cache
@@ -24,6 +25,7 @@ def sales(request, course_id):
         "has_access": has_access,
         "first": course.lectures.order_by("order", "pk").first() if has_access else None,
         "is_test": settings.ECPAY_ENVIRONMENT == "test",
+        "chapter_count": course.lectures.count(),
     })
 
 
@@ -42,10 +44,15 @@ def checkout(request, course_id):
         gateway = payment_config()
     except ImproperlyConfigured:
         return HttpResponse("付款服務尚未設定完成，請聯絡管理員。", status=503)
+    if settings.ECPAY_ENVIRONMENT == "production" and not legal_ready():
+        return HttpResponse("營運與法律資料尚未確認，暫不開放正式付款。", status=503)
+    if request.POST.get("accept_terms") != "yes" or request.POST.get("policy_version") != POLICY_VERSION:
+        return HttpResponse("請返回課程介紹頁，閱讀並確認目前版本的條款與退款政策。", status=400)
     order = Order.objects.create(
         user=request.user, course=course, course_title=course.title,
         amount=course.price, merchant_id=settings.ECPAY_MERCHANT_ID,
         is_test=settings.ECPAY_ENVIRONMENT == "test",
+        policy_version=POLICY_VERSION, terms_accepted_at=timezone.now(),
     )
     return render(request, "courses/checkout.html", {
         "order": order, "gateway": gateway, "parameters": checkout_parameters(order),

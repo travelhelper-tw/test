@@ -22,6 +22,10 @@ Python 3.11+、Django 5.2、MySQL 8.0+（mysqlclient／utf8mb4）、Pillow，
 MP3 存於 `private_media/`，不再提供公開的 `/media/audio/`。
 書封仍可公開，課程銷售介紹是獨立的純文字欄位，不會顯示章節 HTML。
 
+新增公開 `/terms/`、`/privacy/`、`/refunds/` 與頁尾客服入口；
+銷售頁提供章節數、交付方式及購買須知，但不洩露付費章節內容。
+結帳需勾選目前版本條款，訂單保存版本與確認時間，不代表放棄法定消費權益。
+
 此版不含自助註冊、電子發票、自動退款／金流對帳、訂閱或單章販售。
 帳號由管理員建立。正式販售前仍須確認商業授權、服務／隱私／退款政策及發票需求，
 並完成綠界沙箱與正式商店驗收。購買者仍能保存取得的音檔，這不是 DRM。
@@ -111,6 +115,33 @@ set +a
 | `SITE_URL` | 公開的 HTTPS 網站 origin，如 `https://courses.example.com`，不要有路徑／query |
 | `PRIVATE_MEDIA_ROOT` | 私有音檔絕對路徑，留空用專案的 `private_media/`，不得放在 `media/` 內 |
 | `USE_X_ACCEL_REDIRECT` | 本機 `False`；部署且設定 Nginx internal 後改為 `True` |
+| `SELLER_NAME` / `SELLER_ADDRESS` | 實際營運者名稱與可聯絡地址，公開顯示於法律頁 |
+| `SUPPORT_EMAIL` | 真實可收信的客服信箱，顯示於頁尾與法律頁 |
+| `LEGAL_REVIEWED` | 預設 `False`；營運者完成文件及營運審核後才改 `True` |
+
+### 法律文件與正式收款限制
+
+法律頁是繁體中文**待審核範本，不是法律意見或合規保證**。
+尚未審核時會顯示警示，即使金流金鑰已設定，正式環境也拒絕新建付款訂單。
+測試環境可以驗證完整流程，但不代表實際收款或法律審核完成。
+付款通知不受此新訂單限制，以免變更設定後阻斷已付款訂單的正常確認。
+
+上線前請由營運者／合適的法律專業人員核對：
+
+- 營運者身分、地址、客服時段與回覆方式、適用交易及發票安排。
+- 課程的實際交付內容、無到期日權限與終止服務安排。
+- 退款申請期限、認定標準、辦理流程及依法不得排除的權利。
+  本版**未實作**數位內容立即提供／排除法定解除權的獨立同意流程，
+  不得僅靠勾選條款或開始播放，就宣稱「一律不退費」。
+- 實際主機服務商、資料儲存地區／跨境情形，以及帳號、交易、
+  日誌、客服與備份的保存期限、刪除程序及權利申請窗口。
+
+請直接編修 `courses/templates/courses/legal/` 的範本，移除已處理的待確認說明，
+補上真實規則；不要只把 `LEGAL_REVIEWED=True` 當作法律工作完成。
+文件變更時同步更新 `courses/legal.py` 的 `POLICY_VERSION`（例如日期加版號），
+並保留各版完整文件及營運者資料的非公開不可變備份供爭議查核。
+訂單僅保存版本識別與確認時間，**不是完整法律文件快照**；舊訂單不會回填同意紀錄。
+舊版表單未帶目前版本時會拒絕結帳，請回到銷售頁重新閱讀確認。
 
 ## 2. 建立 MySQL 資料庫
 
@@ -320,6 +351,27 @@ POST／CSRF、完成後跳轉、最後一章、相同排序、跨課程 404、�
    `deploy/nginx.conf` **假設憑證已存在**；尚未取得時，先用臨時 HTTP
    ACME 設定取得憑證，再安裝此 HTTPS 範例。修改範例中的網域與憑證路徑：
 
+   首次申請憑證可先使用 `deploy/nginx-bootstrap.conf`，
+   僅公開 ACME 驗證目錄，其他請求回傳 503，不公開 Django 或私有素材：
+
+   ```bash
+   sudo apt install certbot
+   sudo mkdir -p /var/www/letsencrypt
+   sudo cp /srv/course-reader/deploy/nginx-bootstrap.conf /etc/nginx/sites-available/course-reader
+   sudoedit /etc/nginx/sites-available/course-reader
+   sudo ln -s /etc/nginx/sites-available/course-reader /etc/nginx/sites-enabled/course-reader
+   sudo nginx -t
+   sudo systemctl reload nginx
+   sudo certbot certonly --webroot -w /var/www/letsencrypt -d courses.你的網域
+   ```
+
+   先將 DNS 指向主機，開放 80／443，再執行 certbot；同一網域不要保留重複
+   server block。換成下方正式設定時，已建立 symlink 就不必再執行 `ln -s`。
+   正式 HTTPS 設定也保留 ACME 目錄，供憑證自動更新；檢查
+   `sudo certbot renew --dry-run`，並設定成功更新憑證後 reload Nginx
+   的 deploy hook（例如 `/etc/letsencrypt/renewal-hooks/deploy/reload-nginx`，
+   由 root 建立並授予執行權限，內容呼叫 `systemctl reload nginx`）。
+
    ```bash
    sudo cp /srv/course-reader/deploy/nginx.conf /etc/nginx/sites-available/course-reader
    sudoedit /etc/nginx/sites-available/course-reader
@@ -348,3 +400,43 @@ POST／CSRF、完成後跳轉、最後一章、相同排序、跨課程 404、�
 
 定期私下備份 MySQL、`media/covers/` 與 `private_media/`，限制管理員權限，
 定期更新安全修補版本。不要對外開啟 DEBUG、使用示範密碼或公開私有素材。
+
+### 公開測試站驗收、正式上線及回復
+
+目前 repo 的部署範例**不代表已配置外部主機、DNS、憑證或綠界商店**。
+Windows WSL 也不是公開測試站；仍需主機管理權限、網域及對應環境金流資料。
+
+1. 初次部署使用獨立測試 DB 與 `ECPAY_ENVIRONMENT=test`，但公開站一律
+   `DEBUG=False`、`USE_X_ACCEL_REDIRECT=True`。先備份，執行 migrate、
+   collectstatic（舊音檔另執行搬移指令），再啟動服務。
+2. 以服務帳號載入 `/etc/course-reader.env` 後執行：
+
+   ```bash
+   python manage.py check --deploy
+   python manage.py check_launch
+   ```
+
+   請使用服務虛擬環境中的 Python。`check_launch` 僅檢查設定、公開／私有
+   目錄及樣式是否收集，不會對外連線或確認 Nginx、DNS、TLS、商店金鑰真偽。
+   成功訊息不可替代實際驗收；HSTS 的兩項提醒依前述方式審慎評估。
+3. 瀏覽器開啟首頁、銷售頁、三個法律頁、登入及後台，檢查手機版、
+   客服資訊、NT$ 3,680 的實際課程價格。以一般帳號確認沒付款不能讀章節，
+   `/media/audio/…` 與 `/_private_audio/…` 外部請求均應為 404。
+4. 完成前述綠界 sandbox 成功／失敗驗收，確認通知可由外網到達，
+   正常購買後可播放／跳播，撤銷後阻擋；保存不含秘密的驗收紀錄。
+5. 確認法律文件、資料保存與客服安排後設定營運資料及 `LEGAL_REVIEWED=True`，
+   正式商店核准後改用獨立正式資料庫及金鑰，執行：
+
+   ```bash
+   python manage.py check_launch --production
+   ```
+
+   仍須 `nginx -t`、重啟 Gunicorn，並於核准的正式商店按營運者驗收流程確認
+   交易／退款，不能用沙箱權限當正式買家。
+6. 每次更新先記錄上一版 commit、私下備份 DB 與素材、驗證備份可還原，
+   保存原環境設定與法律文件。低流量或維護時段更新，完成後檢查日誌、
+   付款通知、音檔權限與 cookie。不要在維護時誤回 `1|OK` 接受未處理的付款。
+7. 若失敗，先停止接受新結帳並保留付款通知／訂單，修復後重送或對帳。
+   回復已驗證的程式版本；資料庫降版或還原須先核對 migration 與期間新增交易，
+   **不可直接覆蓋正式 DB 而遺失已付款訂單**。素材與私有路徑保持封鎖，
+   確認修復及對帳後再恢復銷售。

@@ -1,11 +1,15 @@
 from django.urls import path
 
 from . import views, commerce_views, media_views
+from .legal import legal_page
 
 app_name = "courses"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("terms/", legal_page, {"page": "terms"}, name="terms"),
+    path("privacy/", legal_page, {"page": "privacy"}, name="privacy"),
+    path("refunds/", legal_page, {"page": "refunds"}, name="refunds"),
     path("courses/<int:course_id>/", commerce_views.sales, name="sales"),
     path("courses/<int:course_id>/checkout/", commerce_views.checkout, name="checkout"),
     path("orders/", commerce_views.orders, name="orders"),

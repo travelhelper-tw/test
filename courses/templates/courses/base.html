@@ -52,5 +52,14 @@
   </nav>
   {% endif %}
   {% block content %}{% endblock %}
+  <footer class="site-footer">
+    <nav aria-label="法律與客服">
+      <a href="{% url 'courses:terms' %}">服務條款</a>
+      <a href="{% url 'courses:privacy' %}">隱私權政策</a>
+      <a href="{% url 'courses:refunds' %}">退款與客服</a>
+    </nav>
+    {% if seller_name %}<p>{{ seller_name }}</p>{% endif %}
+    {% if support_email %}<p>客服信箱：{{ support_email }}</p>{% endif %}
+  </footer>
 </body>
 </html>

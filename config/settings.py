@@ -71,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'courses.legal.legal_context',
             ],
         },
     },
@@ -153,6 +154,10 @@ ECPAY_MERCHANT_ID = os.environ.get("ECPAY_MERCHANT_ID", "")
 ECPAY_HASH_KEY = os.environ.get("ECPAY_HASH_KEY", "")
 ECPAY_HASH_IV = os.environ.get("ECPAY_HASH_IV", "")
 SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
+SELLER_NAME = os.environ.get("SELLER_NAME", "")
+SELLER_ADDRESS = os.environ.get("SELLER_ADDRESS", "")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "")
+LEGAL_REVIEWED = os.environ.get("LEGAL_REVIEWED", "False").lower() in {"true", "1", "yes"}
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "courses:home"
