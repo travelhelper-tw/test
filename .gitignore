@@ -1,0 +1,8 @@
+venv6/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.tmp
+*.pending
+~$*.xlsx
+deliverables/
